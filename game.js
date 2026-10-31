@@ -42,12 +42,13 @@ const I = {
   back: P('<path d="M20 12H4M10 6l-6 6 6 6"/>'),
   heart: P('<path d="M12 20.5s-8.5-5-8.5-11A4.5 4.5 0 0 1 12 6.8a4.5 4.5 0 0 1 8.5 2.7c0 6-8.5 11-8.5 11z"/>', 1),
   book: P('<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>'),
+  search: P('<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/>'),
   sword: P('<path d="M14.5 3.5H20.5V9.5L10 20l-3-3zM5 15l4 4M4 20l2-2"/>'),
 };
 
 /* ---------- words ---------- */
 // RAW: [word, mainMeaning, pron, fullMeaning, dictEntry, story, ex:[para,sent,surface,flag]|0]
-const W = RAW.map((r, i) => ({ i, w: r[0], m: r[1], p: r[2], full: r[3], s: r[5], ex: r[6] || null, k: norm(r[0]) }));
+const W = RAW.map((r, i) => ({ i, w: r[0], m: r[1], p: r[2], full: r[3], head: r[4], s: r[5], ex: r[6] || null, k: norm(r[0]) }));
 STORIES.forEach(s => { s.words = W.filter(w => w.s === s.n).map(w => w.i); });
 const HUE = n => 'h' + ((n - 1) % 5);
 /* each story splits into stations of ~8 words */
@@ -219,8 +220,8 @@ const SOFT = ['قريبة!', 'ولا يهمك', 'بتصير معك', 'مش مش�
 
 /* ---------- shell ---------- */
 let TAB = 'map', VIEWN = null;
-try { const h = location.hash.slice(1); if (['map', 'gram', 'review', 'arcade', 'me'].includes(h)) TAB = h; } catch (e) { }
-const TABS = [['map', 'الرحلة', I.map], ['gram', 'القواعد', I.book], ['review', 'المراجعة', I.chest], ['arcade', 'الألعاب', I.joy], ['me', 'أنا', I.me]];
+try { const h = location.hash.slice(1); if (['map', 'gram', 'dict', 'review', 'arcade', 'me'].includes(h)) TAB = h; } catch (e) { }
+const TABS = [['map', 'الرحلة', I.map], ['gram', 'القواعد', I.book], ['review', 'المراجعة', I.chest], ['dict', 'القاموس', I.search], ['arcade', 'الألعاب', I.joy], ['me', 'أنا', I.me]];
 function dueAll() { const d = DAY(); return Object.keys(ST.w).map(Number).filter(i => ST.w[i].seen && ST.w[i].due <= d); }
 function shell(inner) {
   const L = lvlInfo(), sk = streakNow(), due = dueAll().length;
@@ -234,7 +235,7 @@ function shell(inner) {
     <nav class="tabs"><div class="in">${TABS.map(([k, n, ic]) => `<button class="tab" type="button" data-tab="${k}" ${TAB === k ? 'aria-current="page"' : ''}><span class="ti">${ic}</span>${n}${k === 'review' && due ? `<span class="badge">${due > 99 ? '99+' : due}</span>` : ''}</button>`).join('')}</div></nav>`;
   $$('[data-tab]').forEach(b => b.onclick = () => { TAB = b.dataset.tab; try { history.replaceState(null, '', '#' + TAB); } catch (e) { } render(); scrollTo(0, 0); });
 }
-function render() { ({ map: viewMap, gram: viewGram, review: viewReview, arcade: viewArcade, me: viewMe }[TAB] || viewMap)(); }
+function render() { ({ map: viewMap, gram: viewGram, dict: viewDict, review: viewReview, arcade: viewArcade, me: viewMe }[TAB] || viewMap)(); }
 
 /* ---------- journey map ---------- */
 function missionCard() {
@@ -1078,7 +1079,15 @@ function radar() {
   const tm = setInterval(() => { if (!$('.deck') || D?.kind !== 'radar') return clearInterval(tm); const now = Date.now(); t -= (now - last) / 1000; last = now; $('#tbar').style.width = Math.max(0, t / 60 * 100) + '%'; if (t <= 0) { clearInterval(tm); end = true; arcadeDone('radar', score, [], score >= 25 ? 3 : score >= 15 ? 2 : 1, `${score} جواب صح`); } }, 100);
 }
 
+/* ---------- dictionary ---------- */
+const DSRC = {
+  entries: () => W.map(w => { const f = window.Dict.expandEntry(w.head || w.w, w.full || w.m); if (!f.length || norm(f[0][0]) !== w.k) f.unshift([w.w, w.m]); return { w: w.w, p: w.p, m: w.m, forms: f }; }),
+  fam: window.FAM?.fam, ant: window.FAM?.ant, syn: window.FAM?.syn,
+  say: text => { const i = W.findIndex(x => x.k === norm(text)); if (i >= 0) say(i); else tts(text, .85 * (G.wrate || 1)); },
+};
+function viewDict() { shell('<div id="dxroot"></div>'); if (window.Dict) window.Dict.mount($('#dxroot'), DSRC); else $('#dxroot').innerHTML = '<p class="muted">القاموس ما انحمّل.</p>'; }
+
 /* ---------- go ---------- */
-window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['map', 'gram', 'review', 'arcade', 'me'].includes(h) && !D) { TAB = h; render(); } });
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['map', 'gram', 'dict', 'review', 'arcade', 'me'].includes(h) && !D) { TAB = h; render(); } });
 ensureToday(); render();
 })();

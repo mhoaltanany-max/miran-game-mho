@@ -21,7 +21,7 @@ jobs:
       - name: Wrap the game with Capacitor (fonts bundled for offline use)
         run: |
           mkdir -p build/www/fonts
-          cp -r index.html game.js data.js gdata.js a s g icons manifest.webmanifest build/www/
+          cp -r index.html game.js data.js gdata.js dict.js fam.js a s g icons manifest.webmanifest build/www/
           sed -i '/serviceWorker/d' build/www/index.html
           cd build
           npm init -y >/dev/null
@@ -57,7 +57,9 @@ jobs:
           cd build/android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon -q
-          cp app/build/outputs/apk/debug/app-debug.apk ../../miran-game.apk
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          $BT/apksigner sign --ks ../../signing/release.keystore --ks-pass pass:miran-game --key-pass pass:miran-game --ks-key-alias mirangame --out ../../miran-game.apk app/build/outputs/apk/debug/app-debug.apk
+          $BT/apksigner verify --print-certs ../../miran-game.apk | head -2
           ls -la ../../miran-game.apk
 
       - name: Publish
