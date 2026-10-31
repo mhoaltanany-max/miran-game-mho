@@ -284,7 +284,7 @@ function viewMap() {
         <button class="nav" type="button" id="cnext" ${n >= STORIES.length ? 'disabled' : ''} aria-label="القصة التالية">${I.next}</button>
       </div>
       ${chapterOpen(n) ? mapHtml(n) : `<div class="panel" style="text-align:center;display:grid;gap:8px;justify-items:center"><span style="color:var(--muted)">${I.lock}</span><b>هالقصة مقفلة لسا</b><span class="muted">بتنفتح لما تتقن القصة اللي قبلها.</span></div>`}
-      <button class="btn ghost sm" type="button" id="story-read" style="justify-self:center">${I.book} اسمع القصة واقرأها</button>
+      <div class="row" style="justify-content:center;flex-wrap:wrap"><button class="btn ghost sm" type="button" id="story-read">${I.book} اسمع القصة واقرأها</button><button class="btn sm" type="button" id="story-words">🎧 كلمات القصة</button></div>
     </section>`);
   $$('[data-step]').forEach(b => b.onclick = () => startStep(+b.dataset.step));
   $('#cprev').onclick = () => { VIEWN = Math.max(1, n - 1); render(); };
@@ -292,6 +292,7 @@ function viewMap() {
   $$('[data-st]').forEach(b => b.onclick = () => { const k = +b.dataset.st; if (!stationOpen(n, k)) return toast('خلّص المحطة اللي قبلها أول'); startStation(n, k); });
   $$('[data-boss]').forEach(b => b.onclick = () => { if (!bossOpen(n)) return toast('تحدي القصة بيفتح لما تخلص كل المحطات'); theatre(n); });
   $('#story-read').onclick = () => { if (!chapterOpen(n)) return toast('القصة مقفلة لسا'); theatre(n, true); };
+  $('#story-words').onclick = () => storyWords(n);
 }
 
 /* ---------- review chest ---------- */
@@ -1077,6 +1078,14 @@ function radar() {
   $('#yes').onclick = () => ans(true); $('#no').onclick = () => ans(false); next();
   let last = Date.now();
   const tm = setInterval(() => { if (!$('.deck') || D?.kind !== 'radar') return clearInterval(tm); const now = Date.now(); t -= (now - last) / 1000; last = now; $('#tbar').style.width = Math.max(0, t / 60 * 100) + '%'; if (t <= 0) { clearInterval(tm); end = true; arcadeDone('radar', score, [], score >= 25 ? 3 : score >= 15 ? 2 : 1, `${score} جواب صح`); } }, 100);
+}
+
+/* ---------- story words player ---------- */
+function storyWords(n) {
+  if (!window.WordPlayer) return;
+  const s = STORIES[n - 1]; prefetch(s.words);
+  window.WordPlayer.open({ title: `القصة ${AR(n)} · ${s.en}`, items: s.words.map(i => ({ w: W[i].w, m: W[i].m, p: W[i].p })),
+    sayEn: (w, rate) => { const i = s.words.find(j => W[j].w === w); return i != null ? say(i, rate) : tts(w, .85 * rate); }, stop: stopAudio });
 }
 
 /* ---------- dictionary ---------- */

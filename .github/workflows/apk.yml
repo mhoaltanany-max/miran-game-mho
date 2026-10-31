@@ -21,11 +21,11 @@ jobs:
       - name: Wrap the game with Capacitor (fonts bundled for offline use)
         run: |
           mkdir -p build/www/fonts
-          cp -r index.html game.js data.js gdata.js dict.js fam.js a s g icons manifest.webmanifest build/www/
+          cp -r index.html game.js data.js gdata.js dict.js fam.js wplayer.js a s g icons manifest.webmanifest build/www/
           sed -i '/serviceWorker/d' build/www/index.html
           cd build
           npm init -y >/dev/null
-          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @fontsource/baloo-bhaijaan-2 @fontsource/fredoka
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor-community/text-to-speech@4 @fontsource/baloo-bhaijaan-2 @fontsource/fredoka
           : > www/fonts/fonts.css
           for f in baloo-bhaijaan-2/400 baloo-bhaijaan-2/500 baloo-bhaijaan-2/600 baloo-bhaijaan-2/700 baloo-bhaijaan-2/800 fredoka/500 fredoka/600 fredoka/700; do
             [ -f node_modules/@fontsource/$f.css ] && cat node_modules/@fontsource/$f.css >> www/fonts/fonts.css
