@@ -168,12 +168,27 @@ const au = new Audio(); au.preload = 'auto';
 let sayTok = 0, enVoice = null;
 function pickVoices() { try { const v = speechSynthesis.getVoices(); enVoice = v.find(x => /^en[-_]US/i.test(x.lang) && /google/i.test(x.name)) || v.find(x => /^en[-_]US/i.test(x.lang)) || v.find(x => /^en/i.test(x.lang)) || null; } catch (e) { } }
 try { pickVoices(); speechSynthesis.onvoiceschanged = pickVoices; } catch (e) { }
-function tts(text, rate) { return new Promise(res => { try { const u = new SpeechSynthesisUtterance(text); if (enVoice) u.voice = enVoice; u.lang = enVoice ? enVoice.lang : 'en-US'; u.rate = rate; u.onend = res; u.onerror = res; speechSynthesis.speak(u); setTimeout(res, 6000); } catch (e) { res(); } }); }
+function tts(text, rate) { return new Promise(res => { const C = window.Capacitor?.Plugins?.TextToSpeech; if (C) { C.speak({ text, lang: 'en-US', rate, volume: 1, category: 'ambient' }).then(res, res); return; } try { const u = new SpeechSynthesisUtterance(text); if (enVoice) u.voice = enVoice; u.lang = enVoice ? enVoice.lang : 'en-US'; u.rate = rate; u.onend = res; u.onerror = res; speechSynthesis.speak(u); setTimeout(res, 6000); } catch (e) { res(); } }); }
 function stopAudio() { sayTok++; try { au.pause(); } catch (e) { } try { speechSynthesis.cancel(); } catch (e) { } }
 async function say(i, rate) {
   rate = rate || G.wrate || 1; stopAudio(); const my = sayTok;
   const url = await clipUrl(i); if (my !== sayTok) return;
   if (!url) return tts(W[i].w, .85 * rate);
+  return new Promise(res => { let done = false; const fin = () => { if (!done) { done = true; res(); } }; au.onended = fin; au.onerror = fin; au.src = url; au.playbackRate = rate; au.play().catch(fin); setTimeout(fin, 7000); });
+}
+/* recordings of other word forms (attached, happiness …) borrowed from «لغتي»: x/x0.js … x/xf.js, keyed by the form */
+const XP = {}, XW = {}, XURL = {};
+window.__xp = (k, obj) => { XP[k] = obj; (XW[k] || []).forEach(f => f()); delete XW[k]; };
+const xSay = w => String(w).replace(/-[^-]*-/g, '').replace(/\s\+.*$/, '').replace(/\bsb\b/g, 'somebody').replace(/\bsth\b/g, 'something').replace(/[\u0600-\u06FF()\[\]]/g, '').replace(/\s+/g, ' ').trim().replace(/^[ ,.;:]+|[ ,.;:]+$/g, '');
+const xKey = w => xSay(w).toLowerCase().replace(/’/g, "'").replace(/[^a-z0-9' -]/g, ' ').trim();
+const xPack = k => { let h = 0; for (const c of k) h = (h * 31 + c.charCodeAt(0)) >>> 0; return 'x' + (h % 16).toString(16); };
+function loadX(n) { return new Promise(res => { if (XP[n]) return res(); if (XW[n]) return XW[n].push(res); XW[n] = [res]; const sc = document.createElement('script'); sc.src = 'x/' + n + '.js'; sc.onerror = () => { (XW[n] || []).forEach(f => f()); delete XW[n]; }; document.head.appendChild(sc); }); }
+async function xUrl(text) { const k = xKey(text); if (!k) return null; if (XURL[k]) return XURL[k]; const n = xPack(k); await loadX(n); const b = XP[n]?.[k]; if (!b) return null; const bin = atob(b), u = new Uint8Array(bin.length); for (let j = 0; j < bin.length; j++) u[j] = bin.charCodeAt(j); return XURL[k] = URL.createObjectURL(new Blob([u], { type: 'audio/webm' })); }
+/* say any English text: the word's own recording, else a borrowed form recording, else the phone voice */
+async function sayAny(text, rate) {
+  rate = rate || G.wrate || 1; const i = W.findIndex(x => x.k === norm(text)); if (i >= 0) return say(i, rate);
+  stopAudio(); const my = sayTok; const url = await xUrl(text); if (my !== sayTok) return;
+  if (!url) return tts(text, .85 * rate);
   return new Promise(res => { let done = false; const fin = () => { if (!done) { done = true; res(); } }; au.onended = fin; au.onerror = fin; au.src = url; au.playbackRate = rate; au.play().catch(fin); setTimeout(fin, 7000); });
 }
 const sayBtn = (i, cls = '') => `<button class="say ${cls}" type="button" data-say="${i}" aria-label="استمع">${I.spk}</button>`;
@@ -1092,7 +1107,7 @@ function storyWords(n) {
 const DSRC = {
   entries: () => W.map(w => { const f = window.Dict.expandEntry(w.head || w.w, w.full || w.m); if (!f.length || norm(f[0][0]) !== w.k) f.unshift([w.w, w.m]); return { w: w.w, p: w.p, m: w.m, forms: f }; }),
   fam: window.FAM?.fam, ant: window.FAM?.ant, syn: window.FAM?.syn,
-  say: text => { const i = W.findIndex(x => x.k === norm(text)); if (i >= 0) say(i); else tts(text, .85 * (G.wrate || 1)); },
+  say: text => sayAny(text),
 };
 function viewDict() { shell('<div id="dxroot"></div>'); if (window.Dict) window.Dict.mount($('#dxroot'), DSRC); else $('#dxroot').innerHTML = '<p class="muted">القاموس ما انحمّل.</p>'; }
 

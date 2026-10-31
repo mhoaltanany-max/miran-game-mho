@@ -21,7 +21,7 @@ jobs:
       - name: Wrap the game with Capacitor (fonts bundled for offline use)
         run: |
           mkdir -p build/www/fonts
-          cp -r index.html game.js data.js gdata.js dict.js fam.js wplayer.js a s g icons manifest.webmanifest build/www/
+          cp -r index.html game.js data.js gdata.js dict.js fam.js wplayer.js a s g x icons manifest.webmanifest build/www/
           sed -i '/serviceWorker/d' build/www/index.html
           cd build
           npm init -y >/dev/null
