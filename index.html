@@ -11,6 +11,7 @@
 <title>مران اللعبة</title>
 <style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 
+
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Fredoka:wght@500;600;700&display=swap">
 <style>
 /* Layout: one 560px "journey" column — daily mission card, a winding station map per story, chunky toy-like 3D buttons; every game runs in a full-screen play deck. Each story chapter wears one of five candy hues. */
@@ -76,7 +77,7 @@ svg.f{fill:currentColor;stroke:none}
 
 /* tab bar */
 .tabs{position:fixed;inset:auto 0 0 0;z-index:20;background:var(--card);border-top:2px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
 .tab{padding:8px 2px 9px;display:grid;justify-items:center;gap:0;font-size:13px;font-weight:700;color:var(--muted);position:relative}
 .tab .ti{width:44px;height:32px;border-radius:12px;display:grid;place-items:center}
 .tab[aria-current="page"]{color:var(--grape)}
@@ -331,6 +332,55 @@ canvas.confetti{position:fixed;inset:0;width:100%;height:100%;z-index:80;pointer
 .shake{animation:shake .3s}
 @keyframes shake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
 .splash{min-height:70vh;display:grid;place-items:center;text-align:center;gap:10px}
+/* grammar */
+.lpage{background:var(--card);border-radius:24px;padding:20px 18px;box-shadow:0 6px 0 var(--line);display:grid;gap:12px;font-size:17.5px;line-height:1.8}
+.lpage h2{font-size:22px;color:var(--h)}
+.lpage p{margin:0}
+.lpage ul{margin:0;padding-inline-start:22px;display:grid;gap:6px}
+.lpage li::marker{color:var(--h)}
+.lpage b{color:var(--h);font-family:var(--en);font-weight:600}
+.lpage .note{background:color-mix(in srgb,var(--sun) 22%,var(--card));border-radius:14px;padding:10px 12px;font-size:16px}
+.lhero{display:grid;justify-items:center;text-align:center;gap:8px;padding-block:10px}
+.lnode{font-size:76px;line-height:1.1;animation:bob 2s ease-in-out infinite}
+.lhero h1{font-size:28px}
+.lvl-tag{background:var(--h);color:var(--hon);border-radius:99px;padding:3px 14px;font-weight:700;font-size:14px}
+.tbl{overflow-x:auto;border-radius:14px;border:2px solid var(--sunk)}
+.tbl table{border-collapse:collapse;width:100%;font-size:16px}
+.tbl th,.tbl td{padding:9px 10px;border-bottom:2px solid var(--sunk);text-align:start}
+.tbl th{background:var(--sunk);font-weight:800}
+.tbl td b,.tbl th b{color:var(--h)}
+.exl{display:grid;gap:10px}
+.exrow{display:flex;gap:10px;align-items:center;background:var(--sunk);border-radius:16px;padding:10px 12px}
+.exrow .emo{font-size:28px;flex:none}
+.exen{font-size:18px;direction:ltr;text-align:left;font-weight:500}
+.mist{display:grid;gap:2px;background:var(--sunk);border-radius:16px;padding:10px 12px}
+.mist .en{direction:ltr;text-align:left;font-size:18px;font-weight:600}
+.mist .bad{color:var(--bad);text-decoration:line-through;text-decoration-thickness:2px}
+.mist .good{color:var(--good)}
+.mist .muted{font-size:15px}
+.rgrp{display:grid;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;direction:ltr}
+.wchip{font-family:var(--en);font-weight:600;font-size:17px;background:var(--sunk);border-radius:12px;padding:6px 12px;box-shadow:0 3px 0 var(--line)}
+.gsent{font-size:22px;line-height:1.7;background:var(--card);border-radius:22px;padding:18px;box-shadow:0 6px 0 var(--line);text-align:left;font-weight:500}
+.gsent .gap{display:inline-block;min-width:80px;border-bottom:3px dashed var(--grape);text-align:center;color:var(--grape);font-weight:700}
+.gsent .gap.gok{color:var(--good);border-color:var(--good)} .gsent .gap.gno{color:var(--bad);border-color:var(--bad)}
+.hintw{color:var(--muted);font-size:16px}
+.wrongbox{background:var(--bad-soft);color:var(--ink);border:2.5px dashed var(--bad);border-radius:18px;padding:16px;font-size:21px;font-weight:600;text-align:left}
+.sline{min-height:74px;background:var(--card);border-radius:20px;padding:12px;box-shadow:0 5px 0 var(--line);display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;direction:ltr}
+.sline.good{box-shadow:0 5px 0 var(--good);background:var(--good-soft)}
+.gbank{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;direction:ltr}
+.gtile{font-family:var(--en);font-weight:600;font-size:18px;padding:9px 13px;border-radius:13px;background:var(--card);box-shadow:0 4px 0 var(--line);color:var(--ink)}
+.gtile.on{background:color-mix(in srgb,var(--sky) 18%,var(--card));box-shadow:0 4px 0 var(--sky)}
+.gtile.used{visibility:hidden}
+.tile.syl{width:auto;padding:0 14px}
+.hlc{color:var(--coral);text-decoration:underline;text-decoration-thickness:3px}
+.lrow{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:2px solid var(--sunk);text-align:start;width:100%}
+.lrow:last-child{border-bottom:0}
+.lrow b{display:block;font-size:16px}
+.lrow small{display:block;font-size:13.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:right}
+.lic{width:44px;height:44px;border-radius:14px;background:color-mix(in srgb,var(--coral) 18%,var(--card));display:grid;place-items:center;font-size:24px;flex:none}
+.lic.p{background:color-mix(in srgb,var(--mint) 20%,var(--card))}
+.today{background:var(--coral);color:#fff;border-radius:99px;padding:2px 10px;font-size:13px;font-weight:800}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (max-width:380px){.bub{width:112px;height:112px;font-size:16px}.games{gap:10px}.shop{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
@@ -338,6 +388,7 @@ canvas.confetti{position:fixed;inset:0;width:100%;height:100%;z-index:80;pointer
 <body>
 <div id="app" dir="rtl" lang="ar"><div class="wrap"><div class="splash"><div><h1 style="font-size:40px;color:var(--grape)">مِران</h1><p class="muted">بنجهّز الرحلة…</p></div></div></div></div>
 <script src="data.js" charset="utf-8"></script>
+<script src="gdata.js" charset="utf-8"></script>
 <script src="game.js" charset="utf-8"></script>
 <script>if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
