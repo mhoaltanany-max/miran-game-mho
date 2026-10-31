@@ -1,0 +1,26 @@
+{
+  "name": "مران اللعبة",
+  "short_name": "مران اللعبة",
+  "description": "رحلة يومية: راجع القديم، خلّص محطات قصة اليوم بألعاب صغيرة، وتغلّب على تحدي القصة.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEEAFF",
+  "theme_color": "#6C4CF5",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
