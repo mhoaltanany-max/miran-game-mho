@@ -17,6 +17,8 @@
 
 ## تشغيله
 
+**على الجوال (أندرويد، بدون نت):** نزّل وثبّت التطبيق: https://github.com/mhoaltanany-max/miran-game-mho/releases/latest/download/miran-game.apk
+
 **على الكمبيوتر:** نزّل المستودع (Code ← Download ZIP)، فك الضغط، وافتح `index.html` بـ Chrome أو Edge.
 
 **على الموبايل كتطبيق:** فعّل GitHub Pages (Settings ← Pages ← Branch: `main` / root)، افتح الرابط، ومن قائمة المتصفح اختار "إضافة للشاشة الرئيسية".

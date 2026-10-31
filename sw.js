@@ -1,5 +1,5 @@
 /* مران اللعبة — offline cache. The game, its data and word audio are cached on install; story and grammar recordings are saved the first time they play. */
-const CACHE = 'miran-game-v2';
+const CACHE = 'miran-game-v3';
 const SHELL = ['./', 'index.html', 'game.js', 'gdata.js', 'data.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png',
   ...Array.from({ length: 11 }, (_, k) => `a/p${k}.js`)];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
