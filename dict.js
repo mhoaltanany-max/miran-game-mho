@@ -84,6 +84,8 @@ const CSS = `
 .dx-pair .op{font-size:24px;font-weight:800;color:var(--dxa)}
 .dx-pair .row{display:flex;gap:6px;align-items:center}
 .dx-empty{text-align:center;color:var(--muted);padding:24px;background:var(--card);border-radius:20px}
+.dx-lv{display:inline-block;font-family:var(--en);font-weight:700;font-size:12px;line-height:1;padding:4px 7px;border-radius:8px;vertical-align:middle;margin-inline-start:6px;background:var(--sunk);color:var(--ink2,var(--ink))}
+.dx-lv.a{background:#D5F7EA;color:#0B9476}.dx-lv.b{background:#DDF0FF;color:#1C86D1}.dx-lv.b2{background:#FFF0C7;color:#A86F00}.dx-lv.c{background:#FFE3E7;color:#D94848}
 mark.dx-hl{background:var(--hl,#FFE27A);color:inherit;border-radius:4px;padding:0 1px}
 `;
 
@@ -105,7 +107,7 @@ function mount(el, src) {
   const body = el.querySelector('#dx-body'), q = el.querySelector('#dx-q');
   const hl = (s, needle, isEn) => { if (!needle) return esc(s); const t = String(s); const i = (isEn ? t.toLowerCase() : nAr(t)).indexOf(needle); if (i < 0 || !isEn) return esc(t); return esc(t.slice(0, i)) + '<mark class="dx-hl">' + esc(t.slice(i, i + needle.length)) + '</mark>' + esc(t.slice(i + needle.length)); };
   const say = (w) => `<button class="dx-say" type="button" data-dxs="${esc(w)}" aria-label="استمع">${SPK}</button>`;
-  const block = (e, needle, isEn) => `<div class="dx-fam">${e.forms.map((f, k) => `<div class="dx-row ${k ? 'sub' : 'base'} ${needle && isEn && e.keys[k].startsWith(needle) ? 'hit' : ''}">${say(f[0])}<span class="tx"><span><span class="w">${hl(f[0], needle, isEn)}</span>${!k && e.p ? `<span class="p">${esc(e.p)}</span>` : ''}</span><span class="m">${esc(f[1])}</span></span></div>`).join('')}</div>`;
+  const block = (e, needle, isEn) => `<div class="dx-fam">${e.forms.map((f, k) => `<div class="dx-row ${k ? 'sub' : 'base'} ${needle && isEn && e.keys[k].startsWith(needle) ? 'hit' : ''}">${say(f[0])}<span class="tx"><span><span class="w">${hl(f[0], needle, isEn)}</span>${!k && e.lv ? ` <span class="dx-lv ${({ A1: 'a', A2: 'a', B1: 'b', B2: 'b2', C1: 'c', C2: 'c' })[e.lv] || 'b'}">${esc(e.lv)}</span>` : ''}${!k && e.p ? `<span class="p">${esc(e.p)}</span>` : ''}</span><span class="m">${esc(f[1])}</span></span></div>`).join('')}</div>`;
   const draw = () => {
     const raw = st.q.trim(), isEn = /[a-z]/i.test(raw), needle = isEn ? nEn(raw) : nAr(raw);
     let h = '';

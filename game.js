@@ -50,6 +50,13 @@ const I = {
 // RAW: [word, mainMeaning, pron, fullMeaning, dictEntry, story, ex:[para,sent,surface,flag]|0]
 const W = RAW.map((r, i) => ({ i, w: r[0], m: r[1], p: r[2], full: r[3], head: r[4], s: r[5], ex: r[6] || null, k: norm(r[0]) }));
 STORIES.forEach(s => { s.words = W.filter(w => w.s === s.n).map(w => w.i); });
+/* estimated CEFR level per word (levels.js); B2 and C words get extra practice and come back sooner */
+W.forEach(w => { w.lv = (window.WLV && window.WLV[w.w]) || 'B1'; });
+const HARD = { B2: 1, C1: 1, C2: 1 };
+const isHard = i => !!HARD[W[i].lv];
+const LVCLS = { A1: 'a', A2: 'a', B1: 'b', B2: 'b2', C1: 'c', C2: 'c' };
+const lvBadge = i => `<span class="lvb ${LVCLS[W[i].lv]}" title="المستوى التقريبي">${W[i].lv}</span>`;
+const IVX = { B2: .65, C1: .55, C2: .5 };
 const HUE = n => 'h' + ((n - 1) % 5);
 /* each story splits into stations of ~8 words */
 function stations(n) {
@@ -91,7 +98,7 @@ function record(i, skill, ok, opts = {}) {
   bumpDay('a'); if (ok) bumpDay('ok');
   if (ok) x.ok[skill]++; else x.bad[skill]++;
   if (opts.noSrs) { save(); return; }
-  if (ok) { if (!opts.hinted) x.st = Math.min(IV.length - 1, x.st + 1); x.due = d + IV[Math.max(1, x.st)] * (opts.hinted ? 0.5 : 1) | 0; }
+  if (ok) { if (!opts.hinted) x.st = Math.min(IV.length - 1, x.st + 1); x.due = d + Math.max(1, IV[Math.max(1, x.st)] * (opts.hinted ? 0.5 : 1) * (IVX[W[i].lv] || 1) | 0); }
   else { x.lp++; x.st = Math.max(1, x.st - 2); x.due = d; }
   x.last = d; save();
 }
@@ -136,7 +143,7 @@ function ensureToday() {
   if (G.today && G.today.d === d) { if (!('g' in G.today)) { G.today.g = firstOpenLesson(); G.today.grev = gramDue(d, G.today.g); G.today.grd = 0; save(); } return G.today; }
   const n = firstOpenStory();
   const rev = Object.keys(ST.w).map(Number).filter(i => ST.w[i].seen && W[i].s !== n && ST.w[i].due <= d)
-    .sort((a, b) => wordScore(b) - wordScore(a) || ST.w[a].due - ST.w[b].due).slice(0, 36);
+    .sort((a, b) => (isHard(b) - isHard(a)) || wordScore(b) - wordScore(a) || ST.w[a].due - ST.w[b].due).slice(0, 36);
   const g = firstOpenLesson();
   G.today = { d, n, rev, rd: 0, g, grev: gramDue(d, g), grd: 0 }; save();
   return G.today;
@@ -149,9 +156,9 @@ function missionSteps() {
   out.push({ kind: 'boss', title: 'تحدي القصة', sub: 'اسمع القصة كاملة وجاوب', done: storyDone(n) });
   return out;
 }
-const stationOpen = (n, k) => k === 0 || !!G.stars[n + '-' + (k - 1)];
-const bossOpen = n => stations(n).every((_, k) => G.stars[n + '-' + k]);
-const chapterOpen = n => n === 1 || storyDone(n - 1) || n <= ensureToday().n || stations(n).some((_, k) => G.stars[n + '-' + k]);
+const stationOpen = () => true;
+const bossOpen = () => true;
+const chapterOpen = () => true;
 
 /* ---------- audio ---------- */
 const PACK = {}, WAIT = {}, URLS = {};
@@ -299,6 +306,7 @@ function viewMap() {
         <button class="nav" type="button" id="cnext" ${n >= STORIES.length ? 'disabled' : ''} aria-label="القصة التالية">${I.next}</button>
       </div>
       ${chapterOpen(n) ? mapHtml(n) : `<div class="panel" style="text-align:center;display:grid;gap:8px;justify-items:center"><span style="color:var(--muted)">${I.lock}</span><b>هالقصة مقفلة لسا</b><span class="muted">بتنفتح لما تتقن القصة اللي قبلها.</span></div>`}
+      ${n !== T.n ? `<button class="btn sm" type="button" id="make-today" style="justify-self:center">📌 خلّيها قصة اليوم</button>` : ''}
       <div class="row" style="justify-content:center;flex-wrap:wrap"><button class="btn ghost sm" type="button" id="story-read">${I.book} اسمع القصة واقرأها</button><button class="btn sm" type="button" id="story-words">🎧 كلمات القصة</button></div>
     </section>`);
   $$('[data-step]').forEach(b => b.onclick = () => startStep(+b.dataset.step));
@@ -308,6 +316,7 @@ function viewMap() {
   $$('[data-boss]').forEach(b => b.onclick = () => { if (!bossOpen(n)) return toast('تحدي القصة بيفتح لما تخلص كل المحطات'); theatre(n); });
   $('#story-read').onclick = () => { if (!chapterOpen(n)) return toast('القصة مقفلة لسا'); theatre(n, true); };
   $('#story-words').onclick = () => storyWords(n);
+  const mt = $('#make-today'); if (mt) mt.onclick = () => { const T2 = ensureToday(); T2.n = n; T2.rev = T2.rev.filter(i => W[i].s !== n); save(); SFX.tap(); toast('تمام! صارت قصة اليوم'); render(); scrollTo(0, 0); };
 }
 
 /* ---------- review chest ---------- */
@@ -325,17 +334,19 @@ function viewReview() {
       <div class="kpi"><b>${Object.keys(ST.w).filter(i => ST.w[i].st >= 5).length}</b><span>كلمة محفوظة</span></div>
       <div class="kpi"><b>${weak.length}</b><span>كلمة بدها شغل</span></div>
     </section>
+    ${(() => { const hs = Object.keys(ST.w).map(Number).filter(i => ST.w[i].seen && isHard(i)), left = hs.filter(i => ST.w[i].st < 5); return hs.length ? `<section class="panel" style="display:grid;gap:10px"><div class="row"><span style="font-size:34px">💪</span><div class="grow"><b style="font-size:18px">الكلمات الصعبة (B2 وC)</b><div class="muted" style="font-size:14px">${AR(hs.length)} كلمة صعبة مرّت عليك، ${AR(left.length)} منها لسا ما انحفظت منيح</div></div></div><button class="btn sm h3" type="button" id="drill-hard" style="justify-self:start">قوّيها هلّق</button></section>` : ''; })()}
     ${weak.length ? `<section class="sec"><div class="sec-h"><h2>كلمات بتعاندك</h2><button class="btn sm h3" type="button" id="drill-weak">درّبها</button></div>
-      <div class="wlist">${weak.slice(0, 12).map(i => `<div class="wl">${sayBtn(i, 'sm')}<span class="w en grow">${esc(W[i].w)}</span><span class="m">${esc(W[i].m)}</span></div>`).join('')}</div></section>` : ''}`);
+      <div class="wlist">${weak.slice(0, 12).map(i => `<div class="wl">${sayBtn(i, 'sm')}<span class="w en grow">${esc(W[i].w)}</span>${lvBadge(i)}<span class="m">${esc(W[i].m)}</span></div>`).join('')}</div></section>` : ''}`);
   const oc = $('#open-chest'); if (oc) oc.onclick = () => startReview(shuffle(due.sort((a, b) => wordScore(b) - wordScore(a)).slice(0, 24)).slice(0, 12));
   const dw = $('#drill-weak'); if (dw) dw.onclick = () => startReview(weak.slice(0, 10));
+  const dh = $('#drill-hard'); if (dh) dh.onclick = () => { const hs = Object.keys(ST.w).map(Number).filter(i => ST.w[i].seen && isHard(i)).sort((a, b) => ST.w[a].st - ST.w[b].st || wordScore(b) - wordScore(a)); startReview(shuffle(hs.slice(0, 20)).slice(0, 10)); };
 }
 
 /* ---------- arcade ---------- */
 function pool(min = 12) {
   let p = Object.keys(ST.w).map(Number).filter(i => ST.w[i].seen);
   if (p.length < min) { const n = ensureToday().n; p = [...new Set([...p, ...STORIES[n - 1].words.slice(0, 24), ...STORIES[0].words.slice(0, 24)])]; }
-  return p;
+  return [...p, ...p.filter(isHard), ...p.filter(isHard)];
 }
 function viewArcade() {
   const b = k => G.best[k] ? `<span class="best">أفضل: ${G.best[k]}</span>` : '';
@@ -352,11 +363,11 @@ function viewArcade() {
       <button class="game h4" type="button" data-g="sent">${b('sent')}<span class="gi">🧱</span><span><b>ابنِ الجملة</b><small>رتّب كلمات الجمل من دروس القواعد</small></span></button>
     </div></section>`);
   $$('[data-g]').forEach(btn => btn.onclick = () => {
-    const g = btn.dataset.g, p = shuffle(pool());
-    if (g === 'rush') return rush(p);
+    const g = btn.dataset.g, pw = shuffle(pool()), p = [...new Set(pw)];
+    if (g === 'rush') return rush(pw);
     if (g === 'radar') return radar();
     if (g === 'sent') { const ls = gPool(); const qs = shuffle(ls.flatMap(l => l.q.filter(q => q[0] === 'ord' || q[0] === 'tr').map(q => gRound(l, q)))).filter(Boolean).slice(0, 8); return qs.length ? play({ kind: 'arcade', key: 'sent', title: 'ابنِ الجملة', hue: 'h4', q: qs }) : toast('خلّص أول درس قواعد'); }
-    if (g === 'rain') return rain(p);
+    if (g === 'rain') return rain(pw);
     if (g === 'mem') return memory(p);
     if (g === 'ear') return play({ kind: 'arcade', key: 'ear', title: 'تحدي السمع', hue: 'h0', q: p.slice(0, 10).map(i => ({ t: 'listen', i })) });
     if (g === 'bub') return play({ kind: 'arcade', key: 'bub', title: 'فقّع الفقاعة', hue: 'h2', q: p.slice(0, 10).map(i => ({ t: 'bubble', i })) });
@@ -411,6 +422,10 @@ function startStation(n, k) {
     shuffle(ch).forEach((i, j) => q.push({ t: j % 2 ? 'bubble' : 'listen', i }));
   });
   shuffle(ids).forEach(i => q.push({ t: canBuild(i) && Math.random() < .55 ? 'build' : exSentence(i) ? 'gap' : 'bubble', i }));
+  /* B2/C words: two more rounds each, spread through the second half */
+  const hard = ids.filter(isHard);
+  hard.forEach(i => { const extra = [{ t: 'listen', i, hard: 1 }, { t: canBuild(i) ? 'build' : exSentence(i) ? 'gap' : 'bubble', i, hard: 1 }];
+    extra.forEach(r => q.splice(Math.floor(q.length / 2) + (Math.random() * (q.length / 2) | 0), 0, r)); });
   play({ kind: 'station', n, k, title: `المحطة ${AR(k + 1)}`, hue: HUE(n), q });
 }
 function reviewRound(i) {
@@ -426,6 +441,7 @@ function startReview(ids, mission, gids = []) {
   if (ids.length >= 4) q.push({ t: 'match', ids: firstHalf });
   ids.forEach(i => { if (!(ids.length >= 4 && firstHalf.includes(i))) q.push(reviewRound(i)); });
   shuffle(firstHalf).forEach(i => q.push(reviewRound(i)));
+  ids.filter(isHard).forEach(i => q.splice(Math.random() * (q.length + 1) | 0, 0, Object.assign(reviewRound(i), { hard: 1 })));
   gids.forEach(id => { const r = gRound(LBY.get(id), rnd(LBY.get(id).q.filter(q => q[0] !== 'rule')) || rnd(LBY.get(id).q)); if (r) { r.grev = id; q.splice(Math.random() * (q.length + 1) | 0, 0, r); } });
   play({ kind: 'review', mission, ids, gids, title: 'مراجعة', hue: 'h4', q });
 }
@@ -499,7 +515,7 @@ function hintBtn(onHint) { return `<button class="btn ghost sm" type="button" id
 /* intro: meet a new word */
 function rIntro(it, el) {
   const w = W[it.i]; meet(it.i);
-  el.innerHTML = `<div class="ask">كلمة جديدة!<small>اسمعها، شوف معناها، وتخيّلها بالقصة</small></div>
+  el.innerHTML = `<div class="ask">كلمة جديدة! ${lvBadge(it.i)}<small>${isHard(it.i) ? '💪 كلمة صعبة: رح ترجعلك أكتر من مرة بهالمحطة وبالمراجعة' : 'اسمعها، شوف معناها، وتخيّلها بالقصة'}</small></div>
     <div class="card"><div class="row" style="justify-content:center">${sayBtn(it.i)}<button class="say sm" type="button" data-say="${it.i}" data-rate=".7" aria-label="استمع ببطء" style="background:var(--mint);box-shadow:0 4px 0 var(--mint-d)">${I.turtle}</button></div>
       <div class="big-en">${esc(w.w)}</div><div class="pron">${esc(w.p)}</div><div class="big-ar">${esc(w.m)}</div>${exHtml(it.i)}</div>`;
   const dk = document.createElement('div'); dk.className = 'dock'; dk.innerHTML = `<div class="in"><button class="btn" type="button" id="got">حفظتها! ←</button></div>`; document.body.appendChild(dk);
@@ -611,7 +627,7 @@ function finish() {
     <div class="bigstars">${[0, 1, 2].map(k => `<svg viewBox="0 0 24 24" class="${k < stars ? 'on' : ''}"><path fill="currentColor" d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z"/></svg>`).join('')}</div>
     <h1>${info.title || title}</h1>${info.sub ? `<p class="muted" style="margin:0">${info.sub}</p>` : ''}
     <div class="rk"><div class="h2"><b>${D.xp}</b><span>XP</span></div><div class="h4"><b>+${gems}</b><span>جواهر</span></div><div class="h3"><b>${Math.round(acc * 100)}%</b><span>دقّة</span></div></div>
-    ${D.words.size ? `<div class="wlist" style="width:100%;text-align:start">${[...D.words].slice(0, 10).map(i => `<div class="wl">${sayBtn(i, 'sm')}<span class="w en grow">${esc(W[i].w)}</span><span class="m">${esc(W[i].m)}</span></div>`).join('')}</div>` : ''}
+    ${D.words.size ? `<div class="wlist" style="width:100%;text-align:start">${[...D.words].slice(0, 10).map(i => `<div class="wl">${sayBtn(i, 'sm')}<span class="w en grow">${esc(W[i].w)}</span>${lvBadge(i)}<span class="m">${esc(W[i].m)}</span></div>`).join('')}</div>` : ''}
     <div style="display:grid;gap:12px;width:100%">${info.btns}</div>
   </div></div>`;
   d.scrollTop = 0; SFX.win(); confetti();
@@ -1105,7 +1121,7 @@ function storyWords(n) {
 
 /* ---------- dictionary ---------- */
 const DSRC = {
-  entries: () => W.map(w => { const f = window.Dict.expandEntry(w.head || w.w, w.full || w.m); if (!f.length || norm(f[0][0]) !== w.k) f.unshift([w.w, w.m]); return { w: w.w, p: w.p, m: w.m, forms: f }; }),
+  entries: () => W.map(w => { const f = window.Dict.expandEntry(w.head || w.w, w.full || w.m); if (!f.length || norm(f[0][0]) !== w.k) f.unshift([w.w, w.m]); return { w: w.w, p: w.p, m: w.m, lv: w.lv, forms: f }; }),
   fam: window.FAM?.fam, ant: window.FAM?.ant, syn: window.FAM?.syn,
   say: text => sayAny(text),
 };
